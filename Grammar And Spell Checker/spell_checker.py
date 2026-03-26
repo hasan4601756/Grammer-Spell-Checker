@@ -3,53 +3,65 @@ import nltk
 nltk.download('words')
 from nltk.corpus import words
 
-def levenshtein_distance(s1, s2):
-    m, n = len(s1), len(s2)
 
-    dp = [[0] * (n + 1) for _ in range(m + 1)]
+class SpellChecker:
+    def __init__(self):
+        self.word_list = words.words()
+        self.word_set = set(w.lower() for w in self.word_list)
+        print("Dictionary size:", len(self.word_list))
 
-    for i in range(m + 1):
-        dp[i][0] = i
-    for j in range(n + 1):
-        dp[0][j] = j
+    def levenshtein_distance(self, s1, s2):
+        m, n = len(s1), len(s2)
 
-    for i in range(1, m + 1):
-        for j in range(1, n + 1):
-            if s1[i - 1] == s2[j - 1]:
-                cost = 0
-            else:
-                cost = 1
+        dp = [[0] * (n + 1) for _ in range(m + 1)]
 
-            dp[i][j] = min(
-                dp[i - 1][j] + 1,      
-                dp[i][j - 1] + 1,      
-                dp[i - 1][j - 1] + cost 
-            )
+        for i in range(m + 1):
+            dp[i][0] = i
+        for j in range(n + 1):
+            dp[0][j] = j
 
-    return dp[m][n]
+        for i in range(1, m + 1):
+            for j in range(1, n + 1):
+                cost = 0 if s1[i - 1] == s2[j - 1] else 1
 
+                dp[i][j] = min(
+                    dp[i - 1][j] + 1,
+                    dp[i][j - 1] + 1,
+                    dp[i - 1][j - 1] + cost
+                )
 
-def get_top_k_suggestions(input_word, word_list, k=5):
-    distances = []
-    filtered_words = [w for w in word_list if abs(len(w) - len(input_word)) <= 2]
+        return dp[m][n]
 
-    for word in filtered_words:
-        dist = levenshtein_distance(input_word.lower(), word.lower())
-        distances.append((dist, word))
+    def is_correct(self, input_word):
+        return input_word.lower() in self.word_set
 
-    top_k = heapq.nsmallest(k, distances)
+    def get_suggestions(self, input_word, k=5):
+        filtered_words = [
+            w for w in self.word_list
+            if abs(len(w) - len(input_word)) <= 2
+        ]
 
-    return [(word, dist) for dist, word in top_k]
+        distances = []
+        for word in filtered_words:
+            dist = self.levenshtein_distance(input_word.lower(), word.lower())
+            distances.append((dist, word))
+
+        top_k = heapq.nsmallest(k, distances)
+        return [(word, dist) for dist, word in top_k]
 
 
 if __name__ == '__main__':
-    word_list = words.words()
-    print("Dictionary size:", len(word_list))
+    checker = SpellChecker()
 
     input_word = input("Enter a word: ")
 
-    suggestions = get_top_k_suggestions(input_word, word_list)
+    if checker.is_correct(input_word):
+        print("\nThe spelling is correct.")
+    else:
+        print("\nThe spelling is incorrect. Suggestions:")
 
-    print("\nTop 5 suggestions:")
-    for word, dist in suggestions:
-        print(f"{word} (distance: {dist})")
+        suggestions = checker.get_suggestions(input_word)
+
+        print("\nTop 5 suggestions:")
+        for word, dist in suggestions:
+            print(f"{word} (distance: {dist})")
