@@ -1,7 +1,7 @@
 import heapq
 import nltk
 nltk.download('words')
-from nltk.corpus import wordsz
+from nltk.corpus import words
 
 
 class SpellChecker:
